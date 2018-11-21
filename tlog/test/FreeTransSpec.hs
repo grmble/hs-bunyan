@@ -1,11 +1,11 @@
-module TransSpec where
+module FreeTransSpec where
 
 import Control.Monad.Except
 import Control.Monad.Free
-import Control.Monad.Free.Trans
 import Control.Monad.Reader
 import Data.Functor (($>))
 import Data.Functor.Sum
+import System.Log.Bunyan.FreeTrans
 import Test.Hspec
 import UnliftIO.IORef
 
@@ -14,13 +14,13 @@ main = hspec spec
 
 spec :: Spec
 spec = do
-  describe "checking reader" $
+  describe "checking free reader" $
     it "increased value in local" $ do
       acc <- newIORef []
       runReaderT (foldFree (interpretLog acc) (unwrapFree incAction)) 1
       records <- readIORef acc
       reverse records `shouldBe` [1, 2, 1]
-  describe "checking error" $
+  describe "checking free error" $
     it "should throw after local block" $ do
       acc <- newIORef []
       catchError

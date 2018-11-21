@@ -1,4 +1,4 @@
-module Control.Monad.Free.Trans where
+module System.Log.Bunyan.FreeTrans where
 
 import Control.Monad.Except
 import Control.Monad.Free

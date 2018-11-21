@@ -6,7 +6,7 @@ import qualified Data.HashMap.Strict as M
 import Data.Maybe (isJust)
 import qualified Data.Time.Clock.System as SC
 import Test.Hspec
-import System.Log.Bunyan
+import System.Log.Bunyan.IO
 import UnliftIO.IORef
 import UnliftIO.STM
 
