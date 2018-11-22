@@ -1,6 +1,6 @@
-resolver: lts-11.13
+resolver: lts-11.22
 
 packages:
 - picolens
-- tlog
+- bunyan
 - bunyan-pid

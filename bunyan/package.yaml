@@ -1,6 +1,6 @@
-name:                tlog
+name:                bunyan
 version:             0.1.0.0
-github:              "grmble/tlog"
+github:              "grmble/hs-bunyan"
 license:             MIT
 author:              "Juergen Gmeiner"
 maintainer:          "spamless.juergen@gmail.com"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/grmble/tlog#readme>
+description:         Please see the README on Github at <https://github.com/grmble/hs-bunyan#readme>
 
 # base 4.10 is stack lts 10 aka GHC 8.2.2
 dependencies:
@@ -39,7 +39,7 @@ library:
   source-dirs: src
 
 tests:
-  tlog-test:
+  bunyan-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -47,7 +47,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - tlog
+    - bunyan
     - hspec
     - QuickCheck
 
