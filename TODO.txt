@@ -1,0 +1,3 @@
+rename project to bunyan (including subprojects)
+changelog! see lein templates
+read lines in file in reverse order - for display of logged data - subproject

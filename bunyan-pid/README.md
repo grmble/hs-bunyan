@@ -1,4 +1,4 @@
-# tprocess
+# bunyan-pid
 
 Current Process ID for Windows and Posix
 

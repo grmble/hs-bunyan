@@ -23,6 +23,7 @@ description:         Please see the README on Github at <https://github.com/grmb
 dependencies:
 - base >= 4.10 && < 5
 - aeson
+- bunyan-pid
 - bytestring
 - free
 - mtl
@@ -31,7 +32,6 @@ dependencies:
 - scientific
 - text
 - time
-- tprocess
 - unliftio
 - unordered-containers
 
