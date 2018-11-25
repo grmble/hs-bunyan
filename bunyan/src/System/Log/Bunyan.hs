@@ -38,27 +38,27 @@ import Text.Printf (printf)
 import Text.Show.Functions ()
 
 -- | Log a message at level INFO - see logRecord for full API
-logInfo :: (HasLogger r, MonadBunyan r m) => T.Text -> m ()
+logInfo :: MonadBunyan r m => T.Text -> m ()
 logInfo = logRecord INFO M.empty
 
 -- | Log a message at level DEBUG - see logRecord for full API
-logDebug :: (HasLogger r, MonadBunyan r m) => T.Text -> m ()
+logDebug :: MonadBunyan r m => T.Text -> m ()
 logDebug = logRecord DEBUG M.empty
 
 -- | Log a message at level ERROR - see logRecord for full API
-logError :: (HasLogger r, MonadBunyan r m) => T.Text -> m ()
+logError :: MonadBunyan r m => T.Text -> m ()
 logError = logRecord ERROR M.empty
 
 -- | Log a message at level WARN - see logRecord for full API
-logWarn :: (HasLogger r, MonadBunyan r m) => T.Text -> m ()
+logWarn :: MonadBunyan r m => T.Text -> m ()
 logWarn = logRecord WARN M.empty
 
 -- | Log a message at level TRACE - see logRecord for full API
-logTrace :: (HasLogger r, MonadBunyan r m) => T.Text -> m ()
+logTrace :: MonadBunyan r m => T.Text -> m ()
 logTrace = logRecord TRACE M.empty
 
 -- | Log the duration of the action.
-logDuration :: (HasLogger r, MonadBunyan r m) => m a -> m a
+logDuration :: MonadBunyan r m => m a -> m a
 logDuration action = do
   start <- getLoggingTime
   a <- action
@@ -88,14 +88,14 @@ duration start end = do
 
 -- | Call the action with a local childlogger
 localLogger ::
-     (HasLogger r, MonadBunyan r m) => T.Text -> AT.Object -> m a -> m a
+     MonadBunyan r m => T.Text -> AT.Object -> m a -> m a
 localLogger n ctx action = do
   lg <- childLogger n ctx
   local (over logger (const lg)) action
 
 -- | Log a json record to the rootLoggers handler
 logRecord ::
-     (HasLogger r, MonadBunyan r m) => Priority -> AT.Object -> T.Text -> m ()
+     MonadBunyan r m => Priority -> AT.Object -> T.Text -> m ()
 logRecord pri obj msg = do
   lg <- asks (view logger)
   let pri' = intPriority pri

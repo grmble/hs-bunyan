@@ -1,7 +1,7 @@
 module BunyanFreeSpec where
 
 import Control.Lens.PicoLens
-import Control.Monad.Free
+import Control.Monad.Free.Church
 import Control.Monad.Reader
 import Data.Functor.Sum
 import qualified Data.HashMap.Strict as M
@@ -54,9 +54,9 @@ spec = do
     handler var logrec = modifyIORef var (logrec :)
 
 ioAction :: ReaderT Logger IO SystemTime
-ioAction = foldFree interpretDsl (unwrapFree dslAction)
+ioAction = foldF interpretDsl (unwrapFree dslAction)
 
-{-- for future reference in case F makes a comeback
+{-- for future reference in case FT makes a comeback
 foldReaderF ::
      Monad m
   => (forall x. f x -> ReaderT r m x)
@@ -92,4 +92,4 @@ dslAction = do
 
 interpretDsl :: HasLogger r => DslF r x -> ReaderT r IO x
 interpretDsl (DslF (InL logreader)) = interpretReader interpretDsl logreader
-interpretDsl (DslF (InR bunyan)) = interpretBunyanIO bunyan
+interpretDsl (DslF (InR bunyan)) = interpretBunyan bunyan

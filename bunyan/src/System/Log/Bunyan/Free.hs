@@ -11,7 +11,7 @@ See FreeTransSpec.hs for simplest possible example.
 module System.Log.Bunyan.Free
   ( module System.Log.Bunyan
   , BunyanF(..)
-  , interpretBunyanIO
+  , interpretBunyan
   ) where
 
 import qualified Data.Aeson as A
@@ -29,7 +29,7 @@ data BunyanF x
   deriving (Functor)
 
 -- | Interpret the bunyan DSL into another MonadBunyan (Hint: the ReaderT IO one)
-interpretBunyanIO :: MonadBunyan r m => BunyanF a -> m a
-interpretBunyanIO (ChildLoggerF n ctx f) = f <$> childLogger n ctx
-interpretBunyanIO (HandleRecordF obj x) = handleRecord obj $> x
-interpretBunyanIO (LoggingTimeF f) = f <$> getLoggingTime
+interpretBunyan :: MonadBunyan r m => BunyanF a -> m a
+interpretBunyan (ChildLoggerF n ctx f) = f <$> childLogger n ctx
+interpretBunyan (HandleRecordF obj x) = handleRecord obj $> x
+interpretBunyan (LoggingTimeF f) = f <$> getLoggingTime
