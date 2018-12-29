@@ -4,3 +4,4 @@ packages:
 - picolens
 - bunyan
 - bunyan-pid
+- bunyan-free

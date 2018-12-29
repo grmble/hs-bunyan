@@ -1,4 +1,4 @@
-name:                bunyan
+name:                bunyan-free
 version:             0.1.0.0
 github:              "grmble/hs-bunyan"
 license:             MIT
@@ -22,23 +22,17 @@ description:         Please see the README on Github at <https://github.com/grmb
 # base 4.10 is stack lts 10 aka GHC 8.2.2
 dependencies:
 - base >= 4.10 && < 5
-- bytestring
 - aeson
-- bunyan-pid
+- bunyan
+- free
 - mtl
-- network
-- picolens
-- scientific
 - text
-- time
-- unliftio
-- unordered-containers
 
 library:
   source-dirs: src
 
 tests:
-  bunyan-test:
+  bunyan-free-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -46,7 +40,11 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - bunyan
+    - bunyan-free
+    - picolens
+    - time
+    - unliftio
+    - unordered-containers
     - hspec
     - QuickCheck
 
