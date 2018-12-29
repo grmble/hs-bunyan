@@ -10,7 +10,6 @@ module System.Log.Bunyan.Class
   , HasLogger(..)
   , Priority(..)
   , Logger(..)
-  , LogRecord(..)
   , MonadBunyan(..)
   , intPriority
   ) where
@@ -19,7 +18,6 @@ import Control.Lens.PicoLens (Lens')
 import Control.Monad.Reader
 import qualified Data.Aeson as A
 import qualified Data.Aeson.TH as ATH
-import qualified Data.Aeson.Types as AT
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import qualified Data.Text as T
@@ -61,13 +59,13 @@ intPriority TRACE = 10
 data Logger = Logger
   { name :: {-# UNPACK #-}!T.Text
     -- ^ logger name
-  , context :: !AT.Object
+  , context :: !A.Object
     -- ^ current context object - can be overwritten
   , priority :: {-# UNPACK #-}!Int
     -- ^ log level of the logger
-  , handler :: !(LogRecord -> IO ())
+  , handler :: !(A.Object -> IO ())
     -- ^ handler for log records
-  , rootContext :: !AT.Object
+  , rootContext :: !A.Object
     -- ^ root context - coKntains everything that can be determined
     -- when the root logger is created.  Cant be overwritten.
   , priorityMap :: {-# UNPACK #-}!(TVar (M.HashMap T.Text Priority))
@@ -91,14 +89,8 @@ class HasLogger a where
 instance HasLogger Logger where
   logger = id
 
--- | A log record.
---
--- It has everything from it's loggers context
--- and root context, also the time will be filled in.
--- And of course, it has the message and priority
--- of it's creation.
 newtype LogRecord =
-  LogRecord AT.Object
+  LogRecord A.Object
   deriving (Show, Eq)
 
 -- | The Bunyan Logging typeclass
@@ -108,7 +100,7 @@ newtype LogRecord =
 -- Note that the root logger is not abstracted, you
 -- have to create it with the IO implementation
 class (HasLogger r, MonadReader r m, Monad m) => MonadBunyan r m where
-  childLogger :: T.Text -> AT.Object -> m Logger
+  childLogger :: T.Text -> A.Object -> m Logger
   -- ^ Create a child logger with the given name and default properties
   --
   -- At creation time, it will read shared config for the
@@ -119,5 +111,10 @@ class (HasLogger r, MonadReader r m, Monad m) => MonadBunyan r m where
   -- ^ Get the system time for logging
   --
   -- Log records contain the current timestamp
-  handleRecord :: LogRecord -> m ()
+  handleRecord :: A.Object -> m ()
   -- ^ Handle a finished log record via the root loggers handler
+  --
+  -- It has everything from it's loggers context
+  -- and root context, also the time will be filled in.
+  -- And of course, it has the message and priority
+  -- of it's creation.

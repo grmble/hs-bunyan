@@ -32,13 +32,13 @@ priorityMap' :: Lens' Logger (TVar (M.HashMap T.Text Priority))
 priorityMap' k lg = fmap (\x -> lg {priorityMap = x}) (k (priorityMap lg))
 
 -- | Console handler function - prints to console
-consoleHandler :: LogRecord -> IO ()
-consoleHandler (LogRecord obj) = do
+consoleHandler :: A.Object -> IO ()
+consoleHandler obj = do
   LBSC8.putStrLn $ A.encode obj
   hFlush stdout
 
 -- | Handler that does not log anything
-noopHandler :: LogRecord -> IO ()
+noopHandler :: A.Object -> IO ()
 noopHandler _ = pure ()
 
 -- | Create a root logger object.
@@ -48,7 +48,7 @@ noopHandler _ = pure ()
 -- | other loggers should be children of the root
 -- | logger.
 rootLogger ::
-     MonadIO m => T.Text -> Priority -> (LogRecord -> IO ()) -> m Logger
+     MonadIO m => T.Text -> Priority -> (A.Object -> IO ()) -> m Logger
 rootLogger n p h = do
   hn <- liftIO getHostName
   pid <- liftIO getPid

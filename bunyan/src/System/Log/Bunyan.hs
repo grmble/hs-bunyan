@@ -27,7 +27,6 @@ import Control.Lens.PicoLens (over, view)
 import Control.Monad (when)
 import Control.Monad.Reader
 import qualified Data.Aeson as A
-import qualified Data.Aeson.Types as AT
 import qualified Data.HashMap.Strict as M
 import qualified Data.Scientific as Scientific
 import qualified Data.Text as T
@@ -74,10 +73,10 @@ logDuration action = do
 --    uncurry
 --      (logRecord DEBUG) \
 --      (duration <$> getSystemTime <*> getSystemTime)
-duration :: SystemTime -> SystemTime -> (AT.Object, T.Text)
+duration :: SystemTime -> SystemTime -> (A.Object, T.Text)
 duration start end = do
   let dur = double end - double start
-  let ctx = M.singleton "duration" (AT.Number $ Scientific.fromFloatDigits dur)
+  let ctx = M.singleton "duration" (A.Number $ Scientific.fromFloatDigits dur)
   let msg = T.pack $ printf "completed in %dms" ((round $ 1000 * dur) :: Int)
   (ctx, msg)
   where
@@ -88,20 +87,20 @@ duration start end = do
 
 -- | Call the action with a local childlogger
 localLogger ::
-     MonadBunyan r m => T.Text -> AT.Object -> m a -> m a
+     MonadBunyan r m => T.Text -> A.Object -> m a -> m a
 localLogger n ctx action = do
   lg <- childLogger n ctx
   local (over logger (const lg)) action
 
 -- | Log a json record to the rootLoggers handler
 logRecord ::
-     MonadBunyan r m => Priority -> AT.Object -> T.Text -> m ()
+     MonadBunyan r m => Priority -> A.Object -> T.Text -> m ()
 logRecord pri obj msg = do
   lg <- asks (view logger)
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord (LogRecord (decorate lg tm (context lg)))
+    handleRecord (decorate lg tm (context lg))
   where
     decorate lg t =
       M.insert "name" (A.String $ name lg) .

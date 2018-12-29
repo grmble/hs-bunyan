@@ -23,7 +23,7 @@ data BunyanF x
   = ChildLoggerF T.Text
                  A.Object
                  (Logger -> x)
-  | HandleRecordF LogRecord
+  | HandleRecordF A.Object
                   x
   | LoggingTimeF (SystemTime -> x)
   deriving (Functor)
