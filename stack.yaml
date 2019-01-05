@@ -5,3 +5,4 @@ packages:
 - bunyan
 - bunyan-pid
 - bunyan-free
+- bunyan-freer-simple

@@ -1,0 +1,70 @@
+-- This file has been generated from package.yaml by hpack version 0.20.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: c82c0557413709802317c425bdf095d081d99224b4f4aca69448fbfb29c893b5
+
+name:           bunyan-freer-simple
+version:        0.1.0.0
+description:    Please see the README on Github at <https://github.com/grmble/hs-bunyan#readme>
+homepage:       https://github.com/grmble/hs-bunyan#readme
+bug-reports:    https://github.com/grmble/hs-bunyan/issues
+author:         Juergen Gmeiner
+maintainer:     spamless.juergen@gmail.com
+copyright:      (c) 2018 Juergen Gmeiner
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/grmble/hs-bunyan
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeOperators
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+  build-depends:
+      aeson
+    , base >=4.10 && <5
+    , bunyan
+    , freer-simple
+    , mtl
+    , text
+    , unordered-containers
+  exposed-modules:
+      System.Log.Bunyan.Freer
+  other-modules:
+      Paths_bunyan_freer_simple
+  default-language: Haskell2010
+
+test-suite bunyan-freer-simple-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeOperators
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , aeson
+    , base >=4.10 && <5
+    , bunyan
+    , bunyan-freer-simple
+    , freer-simple
+    , hspec
+    , mtl
+    , picolens
+    , text
+    , time
+    , unliftio
+    , unordered-containers
+  other-modules:
+      BunyanFreerSpec
+      Paths_bunyan_freer_simple
+  default-language: Haskell2010

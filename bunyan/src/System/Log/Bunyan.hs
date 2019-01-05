@@ -20,6 +20,7 @@ module System.Log.Bunyan
   , logError
   , logTrace
   , logDuration
+  , decorateRecord
   , duration
   ) where
 
@@ -86,26 +87,27 @@ duration start end = do
       fromIntegral (C.systemNanoseconds sc) / 1e9
 
 -- | Call the action with a local childlogger
-localLogger ::
-     MonadBunyan r m => T.Text -> A.Object -> m a -> m a
+localLogger :: MonadBunyan r m => T.Text -> A.Object -> m a -> m a
 localLogger n ctx action = do
   lg <- childLogger n ctx
   local (over logger (const lg)) action
 
 -- | Log a json record to the rootLoggers handler
-logRecord ::
-     MonadBunyan r m => Priority -> A.Object -> T.Text -> m ()
+logRecord :: MonadBunyan r m => Priority -> A.Object -> T.Text -> m ()
 logRecord pri obj msg = do
   lg <- asks (view logger)
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord (decorate lg tm (context lg))
-  where
-    decorate lg t =
-      M.insert "name" (A.String $ name lg) .
-      M.insert "level" (A.Number $ fromIntegral $ intPriority pri) .
-      M.insert "msg" (A.String msg) .
-      M.union obj .
-      M.insert "time" (A.toJSON $ C.systemToUTCTime t) .
-      M.union (rootContext lg)
+    handleRecord (decorateRecord pri obj msg lg tm)
+
+-- | Helper function that produces the logged json record
+decorateRecord ::
+     Priority -> A.Object -> T.Text -> Logger -> SystemTime -> A.Object
+decorateRecord pri obj msg lg tm =
+  M.insert "name" (A.String $ name lg) $
+  M.insert "level" (A.Number $ fromIntegral $ intPriority pri) $
+  M.insert "msg" (A.String msg) $
+  M.union obj $
+  M.insert "time" (A.toJSON $ C.systemToUTCTime tm) $
+  M.union (rootContext lg) (context lg)

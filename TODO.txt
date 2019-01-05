@@ -1,5 +1,4 @@
-(A) remove MonadReader from MonadBunyan, add localLogger to MonadBunyan @simple-freer
-(A) simple-freer implementation @simple-freer
 changelog! see lein templates
 read lines in file in reverse order - for display of logged data - subproject
 x remove LogRecord type from API
+x simple-freer implementation @simple-freer
