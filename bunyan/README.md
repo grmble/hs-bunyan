@@ -1,4 +1,4 @@
-# tlog
+# bunyan
 
 Logging for haskell, bunyan style.
 

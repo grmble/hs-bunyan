@@ -7,7 +7,7 @@ import qualified Data.HashMap.Strict as M
 import Data.Maybe (isJust)
 import qualified Data.Time.Clock.System as SC
 import System.Log.Bunyan.Freer
-import qualified System.Log.Bunyan.IO as B
+import qualified System.Log.Bunyan as B
 import Test.Hspec
 import UnliftIO.IORef
 import UnliftIO.STM
@@ -20,7 +20,7 @@ spec = do
   describe "check log levels xxx" $ do
     it "rootlogger info" $ do
       var <- newIORef []
-      rl <- B.rootLogger "root" INFO (handler var)
+      rl <- rootLogger "root" INFO (handler var)
       _ <- ioAction rl
       records <- readIORef var
       length records `shouldBe` 2

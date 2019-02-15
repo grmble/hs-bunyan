@@ -6,8 +6,7 @@ Note that WE ARE NOT USING the classy HasLogger lenses
 
 -}
 module System.Log.Bunyan.Freer
-  ( module System.Log.Bunyan.Class
-  , module System.Log.Bunyan
+  ( module System.Log.Bunyan
   , Bunyan(..)
   , childLogger
   , handleRecord
@@ -20,23 +19,25 @@ module System.Log.Bunyan.Freer
   , logError
   , logTrace
   , logDuration
-  , runBunyan) where
+  , runBunyan
+  ) where
 
 import Control.Monad (when)
 import Control.Monad.Freer
 import Control.Monad.Freer.Reader
-import qualified Control.Monad.Reader as R
 import qualified Data.Aeson as A
 import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
-import System.Log.Bunyan (decorateRecord, duration)
-import System.Log.Bunyan.Class
+import System.Log.Bunyan
   ( Logger(..)
   , Priority(..)
   , SystemTime
+  , decorateRecord
+  , duration
   , intPriority
+  , rootLogger
   )
-import qualified System.Log.Bunyan.IO as B
+import qualified System.Log.Bunyan as B
 
 -- | Bunyan primitives for effect monad
 data Bunyan x where
@@ -105,10 +106,11 @@ logDuration action = do
   uncurry (logRecord INFO) (duration start end)
   pure a
 
-runBunyan :: Logger -> Eff '[Bunyan, Reader Logger, IO] a -> Eff '[ IO] a
+runBunyan :: Logger -> Eff '[ Bunyan, Reader Logger, IO] a -> Eff '[ IO] a
 runBunyan lg =
   runReader lg .
-  interpretM (\case
-                 ChildLogger n ctx lg' -> R.runReaderT (B.childLogger n ctx) lg'
-                 HandleRecord obj lg' -> R.runReaderT (B.handleRecord obj) lg'
-                 LoggingTime -> R.runReaderT B.getLoggingTime lg)
+  interpretM
+    (\case
+       ChildLogger n ctx lg' -> B.childLogger lg' n ctx
+       HandleRecord obj lg' -> B.handleRecord lg' obj
+       LoggingTime -> B.getLoggingTime)

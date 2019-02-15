@@ -1,12 +1,12 @@
 module BunyanSpec where
 
 import Control.Lens.PicoLens
-import Control.Monad.Reader
+import Control.Monad.IO.Class
 import qualified Data.HashMap.Strict as M
 import Data.Maybe (isJust)
 import qualified Data.Time.Clock.System as SC
 import Test.Hspec
-import System.Log.Bunyan.IO
+import System.Log.Bunyan
 import UnliftIO.IORef
 import UnliftIO.STM
 
@@ -19,26 +19,26 @@ spec = do
     it "rootlogger info" $ do
       var <- newIORef []
       rl <- rootLogger "root" INFO (handler var)
-      _ <- runReaderT ioAction rl
+      _ <- ioAction rl
       records <- readIORef var
       length records `shouldBe` 2
     it "rootlogger debug" $ do
       var <- newIORef []
       rl <- rootLogger "root" DEBUG (handler var)
-      _ <- runReaderT ioAction rl
+      _ <- ioAction rl
       records <- readIORef var
       length records `shouldBe` 4
     it "rootlogger error" $ do
       var <- newIORef []
       rl <- rootLogger "root" ERROR (handler var)
-      _ <- runReaderT ioAction rl
+      _ <- ioAction rl
       records <- readIORef var
       length records `shouldBe` 0
     it "rootlogger info/childLogger debug" $ do
       var <- newIORef []
       rl <- rootLogger "root" INFO (handler var)
       atomically $ modifyTVar (view priorityMap' rl) (M.insert "child" DEBUG)
-      _ <- runReaderT ioAction rl
+      _ <- ioAction rl
       records <- readIORef var
       length records `shouldBe` 3
   describe "check duration helper" $
@@ -49,11 +49,11 @@ spec = do
   where
     handler var logrec = modifyIORef var (logrec :)
 
-ioAction :: ReaderT Logger IO SC.SystemTime
-ioAction = do
-  logInfo "info@root"
-  logDebug "debug@root"
-  localLogger "child" (M.singleton "x" "17") $ do
-    logInfo "info@child"
-    logDebug "debug@child"
-    liftIO getSystemTime
+ioAction :: Logger -> IO SystemTime
+ioAction lg = do
+  logInfo lg "info@root"
+  logDebug lg "debug@root"
+  child <- childLogger lg "child" (M.singleton "x" "17")
+  logInfo child "info@child"
+  logDebug child "debug@child"
+  liftIO getSystemTime

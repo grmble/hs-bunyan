@@ -25,7 +25,6 @@ dependencies:
 - bytestring
 - aeson
 - bunyan-pid
-- mtl
 - network
 - picolens
 - scientific

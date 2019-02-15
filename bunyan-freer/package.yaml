@@ -1,4 +1,4 @@
-name:                bunyan-free
+name:                bunyan-freer
 version:             0.1.0.0
 github:              "grmble/hs-bunyan"
 license:             MIT
@@ -24,15 +24,15 @@ dependencies:
 - base >= 4.10 && < 5
 - aeson
 - bunyan
-- free
-- mtl
+- freer-simple
 - text
+- unordered-containers
 
 library:
   source-dirs: src
 
 tests:
-  bunyan-free-test:
+  bunyan-freer-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -40,11 +40,10 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - bunyan-free
+    - bunyan-freer
     - picolens
     - time
     - unliftio
-    - unordered-containers
     - hspec
     - QuickCheck
 
@@ -90,6 +89,3 @@ default-extensions:
 - TypeFamilies
 - TypeFamilyDependencies
 - TypeOperators
-
-
-

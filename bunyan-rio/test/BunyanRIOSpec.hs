@@ -1,16 +1,12 @@
-module BunyanFreeSpec where
+module BunyanRIOSpec where
 
 import Control.Lens.PicoLens
-import Control.Monad.Free.Church
 import Control.Monad.Reader
-import Data.Functor.Sum
 import qualified Data.HashMap.Strict as M
 import Data.Maybe (isJust)
 import qualified Data.Time.Clock.System as SC
-import System.Log.Bunyan.Free
-import System.Log.Bunyan.FreeTrans
-import System.Log.Bunyan.IO
 import Test.Hspec
+import System.Log.Bunyan.RIO
 import UnliftIO.IORef
 import UnliftIO.STM
 
@@ -19,7 +15,7 @@ main = hspec spec
 
 spec :: Spec
 spec = do
-  describe "check log levels xxx" $ do
+  describe "check log levels" $ do
     it "rootlogger info" $ do
       var <- newIORef []
       rl <- rootLogger "root" INFO (handler var)
@@ -54,42 +50,10 @@ spec = do
     handler var logrec = modifyIORef var (logrec :)
 
 ioAction :: ReaderT Logger IO SystemTime
-ioAction = foldF interpretDsl (unwrapFree dslAction)
-
-{-- for future reference in case FT makes a comeback
-foldReaderF ::
-     Monad m
-  => (forall x. f x -> ReaderT r m x)
-  -> ReaderT r (F f) a
-  -> ReaderT r m a
-foldReaderF interpret dsl =
-  ReaderT $ \r -> runReaderT (foldF interpret (runReaderT dsl r)) r
- --}
--- cycle in type alias definition - so it has to be a newtype
-newtype DslF r x
-  -- you probably want (Sum BunyanF YourFunctor)
-         =
-  DslF (Sum (ReaderF (DslF r) r) BunyanF x)
-  deriving (Functor)
-
-instance MonadReader r (WrapFree (DslF r)) where
-  ask = WrapFree $ liftF $ DslF $ InL $ AskF id
-  local rf body = WrapFree $ liftF $ DslF $ InL $ LocalF rf body
-
-instance HasLogger r => MonadBunyan r (WrapFree (DslF r)) where
-  childLogger n ctx = WrapFree $ liftF $ DslF $ InR $ ChildLoggerF n ctx id
-  getLoggingTime = WrapFree $ liftF $ DslF $ InR $ LoggingTimeF id
-  handleRecord obj = WrapFree $ liftF $ DslF $ InR $ HandleRecordF obj ()
-
-dslAction :: WrapFree (DslF Logger) SystemTime
-dslAction = do
+ioAction = do
   logInfo "info@root"
   logDebug "debug@root"
   localLogger "child" (M.singleton "x" "17") $ do
     logInfo "info@child"
     logDebug "debug@child"
     getLoggingTime
-
-interpretDsl :: HasLogger r => DslF r x -> ReaderT r IO x
-interpretDsl (DslF (InL logreader)) = interpretReader interpretDsl logreader
-interpretDsl (DslF (InR bunyan)) = interpretBunyan bunyan

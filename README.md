@@ -1,4 +1,4 @@
-# tlog megarepo
+# bunyan megarepo
 
 Logging for haskell, bunyan style.
 
