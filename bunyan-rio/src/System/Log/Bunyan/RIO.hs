@@ -77,11 +77,11 @@ class (HasLogger r, MonadReader r m, Monad m) =>
 instance HasLogger r => MonadBunyan r (ReaderT r IO) where
   childLogger n ctx = do
     lg <- asks (view logger)
-    liftIO $ B.childLogger lg n ctx
+    liftIO $ B.childLogger n ctx lg
   getLoggingTime = liftIO B.getLoggingTime
   handleRecord obj = do
     lg <- asks (view logger)
-    liftIO $ B.handleRecord lg obj
+    liftIO $ B.handleRecord obj lg
 
 -- | Log a message at level INFO - see logRecord for full API
 logInfo :: MonadBunyan r m => T.Text -> m ()
@@ -119,7 +119,7 @@ logRecord pri obj msg = do
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord (B.decorateRecord pri obj msg lg tm)
+    handleRecord (B.decorateRecord pri obj msg tm lg)
 
 --- | Call the action with a local childlogger
 localLogger :: MonadBunyan r m => T.Text -> A.Object -> m a -> m a

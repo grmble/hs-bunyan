@@ -164,8 +164,8 @@ rootLogger n p h = do
 -- loglevel of the given name.  The decision to log or not
 -- is simply an integer comparison - so try to have long lived
 -- child loggers.
-childLogger :: MonadIO m => Logger -> T.Text -> A.Object -> m Logger
-childLogger lg n ctx = do
+childLogger :: MonadIO m => T.Text -> A.Object -> Logger -> m Logger
+childLogger n ctx lg = do
   m <- readTVarIO (priorityMap lg)
   s <- readTVarIO (loggerNames lg)
   unless (S.member n s) $ atomically $ modifyTVar (loggerNames lg) (S.insert n)
@@ -184,28 +184,28 @@ getLoggingTime = liftIO getSystemTime
 -- and root context, also the time will be filled in.
 -- And of course, it has the message and priority
 -- of it's creation.
-handleRecord :: MonadIO m => Logger -> A.Object -> m ()
-handleRecord lg obj = liftIO $ handler lg obj
+handleRecord :: MonadIO m => A.Object -> Logger -> m ()
+handleRecord obj lg = liftIO $ handler lg obj
 
 -- | Log a message at level INFO - see logRecord for full API
-logInfo :: MonadIO m => Logger -> T.Text -> m ()
-logInfo lg = logRecord lg INFO M.empty
+logInfo :: MonadIO m => T.Text -> Logger -> m ()
+logInfo = logRecord INFO M.empty
 
 -- | Log a message at level DEBUG - see logRecord for full API
-logDebug :: MonadIO m => Logger -> T.Text -> m ()
-logDebug lg = logRecord lg DEBUG M.empty
+logDebug :: MonadIO m => T.Text -> Logger -> m ()
+logDebug = logRecord DEBUG M.empty
 
 -- | Log a message at level ERROR - see logRecord for full API
-logError :: MonadIO m => Logger -> T.Text -> m ()
-logError lg = logRecord lg ERROR M.empty
+logError :: MonadIO m => T.Text -> Logger -> m ()
+logError = logRecord ERROR M.empty
 
 -- | Log a message at level WARN - see logRecord for full API
-logWarn :: MonadIO m => Logger -> T.Text -> m ()
-logWarn lg = logRecord lg WARN M.empty
+logWarn :: MonadIO m => T.Text -> Logger -> m ()
+logWarn = logRecord WARN M.empty
 
 -- | Log a message at level TRACE - see logRecord for full API
-logTrace :: MonadIO m => Logger -> T.Text -> m ()
-logTrace lg = logRecord lg TRACE M.empty
+logTrace :: MonadIO m => T.Text -> Logger -> m ()
+logTrace = logRecord TRACE M.empty
 
 -- | Log the duration of the action.
 logDuration :: MonadIO m => Logger -> (Logger -> m a) -> m a
@@ -213,7 +213,7 @@ logDuration lg action = do
   start <- getLoggingTime
   a <- action lg
   end <- getLoggingTime
-  uncurry (logRecord lg INFO) (duration start end)
+  uncurry (logRecord INFO) (duration start end) lg
   pure a
 
 -- | Helper to compute a duration.
@@ -237,17 +237,17 @@ duration start end = do
       fromIntegral (C.systemNanoseconds sc) / 1e9
 
 -- | Log a json record to the rootLoggers handler
-logRecord :: MonadIO m => Logger -> Priority -> A.Object -> T.Text -> m ()
-logRecord lg pri obj msg = do
+logRecord :: MonadIO m => Priority -> A.Object -> T.Text -> Logger -> m ()
+logRecord pri obj msg lg = do
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord lg (decorateRecord pri obj msg lg tm)
+    handleRecord (decorateRecord pri obj msg tm lg) lg
 
 -- | Helper function that produces the logged json record
 decorateRecord ::
-     Priority -> A.Object -> T.Text -> Logger -> SystemTime -> A.Object
-decorateRecord pri obj msg lg tm =
+     Priority -> A.Object -> T.Text -> SystemTime -> Logger -> A.Object
+decorateRecord pri obj msg tm lg =
   M.insert "name" (A.String $ name lg) $
   M.insert "level" (A.Number $ fromIntegral $ intPriority pri) $
   M.insert "msg" (A.String msg) $

@@ -80,7 +80,7 @@ logRecord pri obj msg = do
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord (decorateRecord pri obj msg lg tm)
+    handleRecord (decorateRecord pri obj msg tm lg)
 
 logInfo :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
 logInfo = logRecord INFO M.empty
@@ -111,6 +111,6 @@ runBunyan lg =
   runReader lg .
   interpretM
     (\case
-       ChildLogger n ctx lg' -> B.childLogger lg' n ctx
-       HandleRecord obj lg' -> B.handleRecord lg' obj
+       ChildLogger n ctx lg' -> B.childLogger n ctx lg'
+       HandleRecord obj lg' -> B.handleRecord obj lg'
        LoggingTime -> B.getLoggingTime)
