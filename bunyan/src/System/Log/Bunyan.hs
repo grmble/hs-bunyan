@@ -49,6 +49,7 @@ import Data.Time.Clock.System (SystemTime, getSystemTime)
 import GHC.Generics
 import Network.BSD (getHostName)
 import System.IO (hFlush, stdout)
+import System.Log.Bunyan.LogText (LogText(..))
 import System.Process.Current (getPid)
 import Text.Printf (printf)
 import Text.Show.Functions ()
@@ -187,6 +188,12 @@ getLoggingTime = liftIO getSystemTime
 handleRecord :: MonadIO m => A.Object -> Logger -> m ()
 handleRecord obj lg = liftIO $ handler lg obj
 
+
+-- note the convenience functions are locked to Text
+-- this is to prevent the "ambigous type variable" errors
+-- when using string constants
+-- use logRecord if you want to pass a LogText instance
+
 -- | Log a message at level INFO - see logRecord for full API
 logInfo :: MonadIO m => T.Text -> Logger -> m ()
 logInfo = logRecord INFO M.empty
@@ -237,7 +244,8 @@ duration start end = do
       fromIntegral (C.systemNanoseconds sc) / 1e9
 
 -- | Log a json record to the rootLoggers handler
-logRecord :: MonadIO m => Priority -> A.Object -> T.Text -> Logger -> m ()
+logRecord ::
+     (LogText a, MonadIO m) => Priority -> A.Object -> a -> Logger -> m ()
 logRecord pri obj msg lg = do
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
@@ -246,11 +254,11 @@ logRecord pri obj msg lg = do
 
 -- | Helper function that produces the logged json record
 decorateRecord ::
-     Priority -> A.Object -> T.Text -> SystemTime -> Logger -> A.Object
+     LogText a => Priority -> A.Object -> a -> SystemTime -> Logger -> A.Object
 decorateRecord pri obj msg tm lg =
   M.insert "name" (A.String $ name lg) $
   M.insert "level" (A.Number $ fromIntegral $ intPriority pri) $
-  M.insert "msg" (A.String msg) $
+  M.insert "msg" (A.String (toText msg)) $
   M.union obj $
   M.insert "time" (A.toJSON $ C.systemToUTCTime tm) $
   M.union (rootContext lg) (context lg)

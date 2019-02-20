@@ -37,6 +37,7 @@ import System.Log.Bunyan
   , intPriority
   , rootLogger
   )
+import System.Log.Bunyan.LogText (LogText(..))
 import qualified System.Log.Bunyan as B
 
 -- | Bunyan primitives for effect monad
@@ -70,10 +71,10 @@ localLogger n ctx action = do
   local (const lg) action
 
 logRecord ::
-     (Member (Reader Logger) effs, Member Bunyan effs)
+     (LogText a, Member (Reader Logger) effs, Member Bunyan effs)
   => Priority
   -> A.Object
-  -> T.Text
+  -> a
   -> Eff effs ()
 logRecord pri obj msg = do
   lg <- ask

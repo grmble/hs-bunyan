@@ -32,6 +32,7 @@ import System.Log.Bunyan
   , priorityMap'
   , rootLogger
   )
+import System.Log.Bunyan.LogText (LogText(..))
 import qualified System.Log.Bunyan as B
 
 -- | Lens typeclass for getting a logger
@@ -113,7 +114,7 @@ logDuration action = do
   pure a
 
 -- | Log a json record to the rootLoggers handler
-logRecord :: MonadBunyan r m => Priority -> A.Object -> T.Text -> m ()
+logRecord :: (LogText a, MonadBunyan r m) => Priority -> A.Object -> a -> m ()
 logRecord pri obj msg = do
   lg <- asks (view logger)
   let pri' = intPriority pri
