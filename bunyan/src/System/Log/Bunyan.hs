@@ -176,8 +176,8 @@ childLogger n lg = do
   pure lg {name = n, priority = pri}
 
 -- | Create a child logger with the given name and addiotional properties.
-childLogger' :: MonadIO m => T.Text -> A.Object -> Logger -> m Logger
-childLogger' n ctx lg = modifyContext (M.union ctx) <$> childLogger n lg
+childLogger' :: MonadIO m => T.Text -> (A.Object -> A.Object) -> Logger -> m Logger
+childLogger' n f lg = modifyContext f <$> childLogger n lg
 
 -- | Create a child logger with the given name
 --
@@ -210,23 +210,23 @@ handleRecord obj lg = liftIO $ handler lg obj
 
 -- | Log a message at level INFO - see logRecord for full API
 logInfo :: MonadIO m => T.Text -> Logger -> m ()
-logInfo = logRecord INFO M.empty
+logInfo = logRecord INFO id
 
 -- | Log a message at level DEBUG - see logRecord for full API
 logDebug :: MonadIO m => T.Text -> Logger -> m ()
-logDebug = logRecord DEBUG M.empty
+logDebug = logRecord DEBUG id
 
 -- | Log a message at level ERROR - see logRecord for full API
 logError :: MonadIO m => T.Text -> Logger -> m ()
-logError = logRecord ERROR M.empty
+logError = logRecord ERROR id
 
 -- | Log a message at level WARN - see logRecord for full API
 logWarn :: MonadIO m => T.Text -> Logger -> m ()
-logWarn = logRecord WARN M.empty
+logWarn = logRecord WARN id
 
 -- | Log a message at level TRACE - see logRecord for full API
 logTrace :: MonadIO m => T.Text -> Logger -> m ()
-logTrace = logRecord TRACE M.empty
+logTrace = logRecord TRACE id
 
 -- | Log the duration of the action.
 logDuration :: MonadIO m => Logger -> (Logger -> m a) -> m a
@@ -245,10 +245,10 @@ logDuration lg action = do
 --    uncurry
 --      (logRecord DEBUG) \
 --      (duration <$> getSystemTime <*> getSystemTime)
-duration :: SystemTime -> SystemTime -> (A.Object, T.Text)
+duration :: SystemTime -> SystemTime -> (A.Object -> A.Object, T.Text)
 duration start end = do
   let dur = double end - double start
-  let ctx = M.singleton "duration" (A.Number $ Scientific.fromFloatDigits dur)
+  let ctx = M.insert "duration" (A.Number $ Scientific.fromFloatDigits dur)
   let msg = T.pack $ printf "completed in %dms" ((round $ 1000 * dur) :: Int)
   (ctx, msg)
   where
@@ -259,20 +259,19 @@ duration start end = do
 
 -- | Log a json record to the rootLoggers handler
 logRecord ::
-     (LogText a, MonadIO m) => Priority -> A.Object -> a -> Logger -> m ()
-logRecord pri obj msg lg = do
+     (LogText a, MonadIO m) => Priority -> (A.Object -> A.Object) -> a -> Logger -> m ()
+logRecord pri f msg lg = do
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord (decorateRecord pri obj msg tm lg) lg
+    handleRecord (decorateRecord pri f msg tm lg) lg
 
 -- | Helper function that produces the logged json record
 decorateRecord ::
-     LogText a => Priority -> A.Object -> a -> SystemTime -> Logger -> A.Object
-decorateRecord pri obj msg tm lg =
+     LogText a => Priority -> (A.Object -> A.Object) -> a -> SystemTime -> Logger -> A.Object
+decorateRecord pri f msg tm lg =
   M.insert "name" (A.String $ name lg) $
   M.insert "level" (A.Number $ fromIntegral $ intPriority pri) $
   M.insert "msg" (A.String (toText msg)) $
-  M.union obj $
   M.insert "time" (A.toJSON $ C.systemToUTCTime tm) $
-  M.union (rootContext lg) (context lg)
+  M.union (rootContext lg) (f $ context lg)

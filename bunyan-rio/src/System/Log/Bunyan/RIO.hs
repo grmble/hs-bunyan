@@ -18,7 +18,6 @@ module System.Log.Bunyan.RIO
 import Control.Lens.PicoLens (Lens', over, view)
 import Control.Monad.Reader
 import qualified Data.Aeson as A
-import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
 import Data.Time.Clock.System (SystemTime)
 import System.Log.Bunyan
@@ -87,23 +86,23 @@ instance HasLogger r => MonadBunyan r (ReaderT r IO) where
 
 -- | Log a message at level INFO - see logRecord for full API
 logInfo :: MonadBunyan r m => T.Text -> m ()
-logInfo = logRecord INFO M.empty
+logInfo = logRecord INFO id
 
 -- | Log a message at level DEBUG - see logRecord for full API
 logDebug :: MonadBunyan r m => T.Text -> m ()
-logDebug = logRecord DEBUG M.empty
+logDebug = logRecord DEBUG id
 
 -- | Log a message at level ERROR - see logRecord for full API
 logError :: MonadBunyan r m => T.Text -> m ()
-logError = logRecord ERROR M.empty
+logError = logRecord ERROR id
 
 -- | Log a message at level WARN - see logRecord for full API
 logWarn :: MonadBunyan r m => T.Text -> m ()
-logWarn = logRecord WARN M.empty
+logWarn = logRecord WARN id
 
 -- | Log a message at level TRACE - see logRecord for full API
 logTrace :: MonadBunyan r m => T.Text -> m ()
-logTrace = logRecord TRACE M.empty
+logTrace = logRecord TRACE id
 
 -- | Log the duration of the action.
 logDuration :: MonadBunyan r m => m a -> m a
@@ -115,13 +114,13 @@ logDuration action = do
   pure a
 
 -- | Log a json record to the rootLoggers handler
-logRecord :: (LogText a, MonadBunyan r m) => Priority -> A.Object -> a -> m ()
-logRecord pri obj msg = do
+logRecord :: (LogText a, MonadBunyan r m) => Priority -> (A.Object -> A.Object)-> a -> m ()
+logRecord pri fn msg = do
   lg <- asks (view logger)
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord (B.decorateRecord pri obj msg tm lg)
+    handleRecord (B.decorateRecord pri fn msg tm lg)
 
 --- | Call the action with a local childlogger
 localLogger :: MonadBunyan r m => T.Text -> (A.Object -> A.Object)-> m a -> m a

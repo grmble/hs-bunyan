@@ -26,7 +26,6 @@ import Control.Monad (when)
 import Control.Monad.Freer
 import Control.Monad.Freer.Reader
 import qualified Data.Aeson as A
-import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
 import System.Log.Bunyan
   ( Logger(..)
@@ -73,30 +72,30 @@ localLogger n f action = do
 logRecord ::
      (LogText a, Member (Reader Logger) effs, Member Bunyan effs)
   => Priority
-  -> A.Object
+  -> (A.Object -> A.Object)
   -> a
   -> Eff effs ()
-logRecord pri obj msg = do
+logRecord pri fn msg = do
   lg <- ask
   let pri' = intPriority pri
   when (pri' >= priority lg) $ do
     tm <- getLoggingTime
-    handleRecord (decorateRecord pri obj msg tm lg)
+    handleRecord (decorateRecord pri fn msg tm lg)
 
 logInfo :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
-logInfo = logRecord INFO M.empty
+logInfo = logRecord INFO id
 
 logDebug :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
-logDebug = logRecord DEBUG M.empty
+logDebug = logRecord DEBUG id
 
 logError :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
-logError = logRecord ERROR M.empty
+logError = logRecord ERROR id
 
 logWarn :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
-logWarn = logRecord WARN M.empty
+logWarn = logRecord WARN id
 
 logTrace :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
-logTrace = logRecord TRACE M.empty
+logTrace = logRecord TRACE id
 
 logDuration ::
      Members '[ Bunyan, Reader Logger] effs => Eff effs a -> Eff effs a

@@ -45,7 +45,7 @@ spec = do
     it "should compute suitable headers" $ do
       (ctx, msg) <- duration <$> SC.getSystemTime <*> SC.getSystemTime
       show msg `shouldContain` "completed in"
-      ctx `shouldSatisfy` (isJust . M.lookup "duration")
+      ctx M.empty `shouldSatisfy` (isJust . M.lookup "duration")
   where
     handler var logrec = modifyIORef var (logrec :)
 
@@ -53,7 +53,7 @@ ioAction :: Logger -> IO SystemTime
 ioAction lg = do
   logInfo "info@root" lg
   logDebug "debug@root" lg
-  child <- childLogger' "child" (M.singleton "x" "17") lg
+  child <- childLogger' "child" (M.insert "x" "17") lg
   logInfo "info@child" child
   logDebug "debug@child" child
   liftIO getSystemTime

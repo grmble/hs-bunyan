@@ -47,7 +47,7 @@ spec = do
     it "should compute suitable headers" $ do
       (ctx, msg) <- duration <$> SC.getSystemTime <*> SC.getSystemTime
       show msg `shouldContain` "completed in"
-      ctx `shouldSatisfy` (isJust . M.lookup "duration")
+      ctx M.empty `shouldSatisfy` (isJust . M.lookup "duration")
   where
     handler var logrec = modifyIORef var (logrec :)
 
