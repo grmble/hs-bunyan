@@ -58,7 +58,7 @@ dslAction :: Eff '[Bunyan, Reader Logger, IO] SystemTime
 dslAction = do
   logInfo "info@root"
   logDebug "debug@root"
-  localLogger "child" (M.singleton "x" "17") $ do
+  localLogger "child" (M.insert "x" "17") $ do
     logInfo "info@child"
     logDebug "debug@child"
     getLoggingTime

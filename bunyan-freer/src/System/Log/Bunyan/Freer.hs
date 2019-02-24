@@ -35,6 +35,7 @@ import System.Log.Bunyan
   , decorateRecord
   , duration
   , intPriority
+  , modifyContext
   , rootLogger
   )
 import System.Log.Bunyan.LogText (LogText(..))
@@ -42,16 +43,15 @@ import qualified System.Log.Bunyan as B
 
 -- | Bunyan primitives for effect monad
 data Bunyan x where
-  ChildLogger :: T.Text -> A.Object -> Logger -> Bunyan Logger
+  ChildLogger :: T.Text -> Logger -> Bunyan Logger
   HandleRecord :: A.Object -> Logger -> Bunyan ()
   LoggingTime :: Bunyan SystemTime
 
 childLogger ::
      Members '[ Reader Logger, Bunyan] effs
   => T.Text
-  -> A.Object
   -> Eff effs Logger
-childLogger n ctx = ask >>= send . ChildLogger n ctx
+childLogger n = ask >>= send . ChildLogger n
 
 handleRecord ::
      Members '[ Reader Logger, Bunyan] effs => A.Object -> Eff effs ()
@@ -63,11 +63,11 @@ getLoggingTime = send LoggingTime
 localLogger ::
      Members '[ Reader Logger, Bunyan] effs
   => T.Text
-  -> A.Object
+  -> (A.Object -> A.Object)
   -> Eff effs a
   -> Eff effs a
-localLogger n ctx action = do
-  lg <- childLogger n ctx
+localLogger n f action = do
+  lg <- modifyContext f <$> childLogger n
   local (const lg) action
 
 logRecord ::
@@ -112,6 +112,6 @@ runBunyan lg =
   runReader lg .
   interpretM
     (\case
-       ChildLogger n ctx lg' -> B.childLogger n ctx lg'
+       ChildLogger n lg' -> B.childLogger n lg'
        HandleRecord obj lg' -> B.handleRecord obj lg'
        LoggingTime -> B.getLoggingTime)

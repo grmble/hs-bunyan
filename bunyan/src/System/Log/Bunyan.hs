@@ -16,6 +16,8 @@ module System.Log.Bunyan
   , Logger(..)
   , rootLogger
   , childLogger
+  , childLogger'
+  , modifyContext
   , logRecord
   , logDebug
   , logInfo
@@ -159,19 +161,31 @@ rootLogger n p h = do
       , loggerNames = logSet
       }
 
--- | Create a child logger with the given name and default properties
+-- | Create a child logger with the given name.
 --
 -- At creation time, it will read shared config for the
 -- loglevel of the given name.  The decision to log or not
 -- is simply an integer comparison - so try to have long lived
 -- child loggers.
-childLogger :: MonadIO m => T.Text -> A.Object -> Logger -> m Logger
-childLogger n ctx lg = do
+childLogger :: MonadIO m => T.Text -> Logger -> m Logger
+childLogger n lg = do
   m <- readTVarIO (priorityMap lg)
   s <- readTVarIO (loggerNames lg)
   unless (S.member n s) $ atomically $ modifyTVar (loggerNames lg) (S.insert n)
   let pri = maybe (priority lg) intPriority $ M.lookup n m
-  pure lg {name = n, context = M.union ctx (context lg), priority = pri}
+  pure lg {name = n, priority = pri}
+
+-- | Create a child logger with the given name and addiotional properties.
+childLogger' :: MonadIO m => T.Text -> A.Object -> Logger -> m Logger
+childLogger' n ctx lg = modifyContext (M.union ctx) <$> childLogger n lg
+
+-- | Create a child logger with the given name
+--
+-- This one only changes the logger name (for that you need IO).
+-- Use modifyContext (M.union your-props) to modify the context.
+-- | Modify the loggers context
+modifyContext :: (A.Object -> A.Object) -> Logger -> Logger
+modifyContext f lg = lg {context = f (context lg)}
 
 -- | Get the system time for logging
 --

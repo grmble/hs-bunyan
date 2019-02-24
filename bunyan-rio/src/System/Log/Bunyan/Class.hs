@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 {- | Bunyan Logging Class
 
 Defines the Bunyan Type class that is implemented for
@@ -37,8 +35,8 @@ newtype LogRecord =
 class (HasLogger r, MonadReader r m, Monad m) =>
       MonadBunyan r m
   where
-  childLogger :: T.Text -> A.Object -> m Logger
-  -- ^ Create a child logger with the given name and default properties
+  childLogger :: T.Text -> m Logger
+  -- ^ Create a child logger with the given name.
   --
   -- At creation time, it will read shared config for the
   -- loglevel of the given name.  The decision to log or not

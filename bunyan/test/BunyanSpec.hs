@@ -53,7 +53,7 @@ ioAction :: Logger -> IO SystemTime
 ioAction lg = do
   logInfo "info@root" lg
   logDebug "debug@root" lg
-  child <- childLogger "child" (M.singleton "x" "17") lg
+  child <- childLogger' "child" (M.singleton "x" "17") lg
   logInfo "info@child" child
   logDebug "debug@child" child
   liftIO getSystemTime

@@ -31,6 +31,7 @@ import System.Log.Bunyan
   , noopHandler
   , priorityMap'
   , rootLogger
+  , modifyContext
   )
 import System.Log.Bunyan.LogText (LogText(..))
 import qualified System.Log.Bunyan as B
@@ -55,7 +56,7 @@ newtype LogRecord =
 class (HasLogger r, MonadReader r m, Monad m) =>
       MonadBunyan r m
   where
-  childLogger :: T.Text -> A.Object -> m Logger
+  childLogger :: T.Text -> m Logger
   -- ^ Create a child logger with the given name and default properties
   --
   -- At creation time, it will read shared config for the
@@ -76,13 +77,13 @@ class (HasLogger r, MonadReader r m, Monad m) =>
 -- yes, it's an orphan instance, but i don't want to get more of the
 -- implentations into the (supposedly abstract) Bunyan.Class module
 instance HasLogger r => MonadBunyan r (ReaderT r IO) where
-  childLogger n ctx = do
+  childLogger n = do
     lg <- asks (view logger)
-    liftIO $ B.childLogger n ctx lg
-  getLoggingTime = liftIO B.getLoggingTime
+    B.childLogger n lg
+  getLoggingTime = B.getLoggingTime
   handleRecord obj = do
     lg <- asks (view logger)
-    liftIO $ B.handleRecord obj lg
+    B.handleRecord obj lg
 
 -- | Log a message at level INFO - see logRecord for full API
 logInfo :: MonadBunyan r m => T.Text -> m ()
@@ -123,7 +124,7 @@ logRecord pri obj msg = do
     handleRecord (B.decorateRecord pri obj msg tm lg)
 
 --- | Call the action with a local childlogger
-localLogger :: MonadBunyan r m => T.Text -> A.Object -> m a -> m a
-localLogger n ctx action = do
-  lg <- childLogger n ctx
+localLogger :: MonadBunyan r m => T.Text -> (A.Object -> A.Object)-> m a -> m a
+localLogger n f action = do
+  lg <- modifyContext f <$> childLogger n
   local (over logger (const lg)) action

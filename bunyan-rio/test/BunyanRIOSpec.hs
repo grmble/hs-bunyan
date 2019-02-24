@@ -53,7 +53,7 @@ ioAction :: ReaderT Logger IO SystemTime
 ioAction = do
   logInfo "info@root"
   logDebug "debug@root"
-  localLogger "child" (M.singleton "x" "17") $ do
+  localLogger "child" (M.insert "x" "17") $ do
     logInfo "info@child"
     logDebug "debug@child"
     getLoggingTime
