@@ -1,0 +1,6 @@
+:set prompt "> "
+:set -fobject-code
+-- overloaded strings can be a bother in the repl
+:seti -XNoOverloadedStrings
+-- -w turns warnings off
+:seti -Wall

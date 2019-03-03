@@ -1,3 +1,6 @@
+# 8.6.3 ghci hangs all the time on windows, wait for 8.6.4
+# resolver: lts-13.9
+# stay with 8.2.2 for now
 resolver: lts-11.22
 
 packages:

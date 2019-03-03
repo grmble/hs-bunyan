@@ -18,7 +18,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/grmble/hs-bunyan#readme>
+description:         Minimal Lens library - Lens', lens', view, over
 
 # base 4.10 is stack lts 10 aka GHC 8.2.2
 dependencies:
@@ -37,6 +37,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - picolens
+    - doctest
     - hspec
     - QuickCheck
 

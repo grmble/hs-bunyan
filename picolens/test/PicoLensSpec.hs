@@ -1,6 +1,7 @@
 module PicoLensSpec where
 
 import Control.Lens.PicoLens
+import Test.DocTest
 import Test.Hspec
 import Test.QuickCheck
 
@@ -20,7 +21,8 @@ recordString :: Lens' SomeRecord String
 recordString k a = fmap (\b -> a {aString = b}) (k (aString a))
 
 spec :: Spec
-spec =
+spec = do
+  runIO $ doctest ["-isrc", "src/Control/Lens/PicoLens.hs"]
   describe "view" $ do
     it "view gets the contents" $
       property $ \(i :: Int, s :: String) -> do
