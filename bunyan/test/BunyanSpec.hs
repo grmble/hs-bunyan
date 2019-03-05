@@ -1,12 +1,12 @@
 module BunyanSpec where
 
 import Control.Lens.PicoLens
-import Control.Monad.IO.Class
 import qualified Data.HashMap.Strict as M
 import Data.Maybe (isJust)
 import qualified Data.Time.Clock.System as SC
 import Test.Hspec
 import System.Log.Bunyan
+import System.Log.Bunyan.Types (priorityMap)
 import UnliftIO.IORef
 import UnliftIO.STM
 
@@ -37,7 +37,7 @@ spec = do
     it "rootlogger info/childLogger debug" $ do
       var <- newIORef []
       rl <- rootLogger "root" INFO (handler var)
-      atomically $ modifyTVar (view priorityMap' rl) (M.insert "child" DEBUG)
+      atomically $ modifyTVar (view priorityMap rl) (M.insert "child" DEBUG)
       _ <- ioAction rl
       records <- readIORef var
       length records `shouldBe` 3
@@ -47,13 +47,12 @@ spec = do
       show msg `shouldContain` "completed in"
       ctx M.empty `shouldSatisfy` (isJust . M.lookup "duration")
   where
-    handler var logrec = modifyIORef var (logrec :)
+    handler var logrec = modifyIORef' var (logrec :)
 
-ioAction :: Logger -> IO SystemTime
+ioAction :: Logger -> IO ()
 ioAction lg = do
   logInfo "info@root" lg
   logDebug "debug@root" lg
-  child <- childLogger' "child" (M.insert "x" "17") lg
+  child <- namedLogger "child" (M.insert "x" "17") lg
   logInfo "info@child" child
   logDebug "debug@child" child
-  liftIO getSystemTime

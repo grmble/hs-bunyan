@@ -1,6 +1,6 @@
 name:           bunyan-pid
 version:        0.1.0.0
-description:    Please see the README on Github at <https://github.com/grmble/hs-bunyan#readme>
+description:    Process ID in platform independent way
 homepage:       https://github.com/grmble/hs-bunyan#readme
 bug-reports:    https://github.com/grmble/hs-bunyan/issues
 author:         Juergen Gmeiner

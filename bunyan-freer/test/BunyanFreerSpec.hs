@@ -4,10 +4,9 @@ import Control.Lens.PicoLens
 import Control.Monad.Freer
 import Control.Monad.Freer.Reader
 import qualified Data.HashMap.Strict as M
-import Data.Maybe (isJust)
-import qualified Data.Time.Clock.System as SC
 import System.Log.Bunyan.Freer
 import qualified System.Log.Bunyan as B
+import qualified System.Log.Bunyan.Types as B
 import Test.Hspec
 import UnliftIO.IORef
 import UnliftIO.STM
@@ -16,7 +15,7 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = do
+spec =
   describe "check log levels xxx" $ do
     it "rootlogger info" $ do
       var <- newIORef []
@@ -39,26 +38,20 @@ spec = do
     it "rootlogger info/childLogger debug" $ do
       var <- newIORef []
       rl <- B.rootLogger "root" INFO (handler var)
-      atomically $ modifyTVar (view B.priorityMap' rl) (M.insert "child" DEBUG)
+      atomically $ modifyTVar (view B.priorityMap rl) (M.insert "child" DEBUG)
       _ <- ioAction rl
       records <- readIORef var
       length records `shouldBe` 3
-  describe "check duration helper" $
-    it "should compute suitable headers" $ do
-      (ctx, msg) <- duration <$> SC.getSystemTime <*> SC.getSystemTime
-      show msg `shouldContain` "completed in"
-      ctx M.empty `shouldSatisfy` (isJust . M.lookup "duration")
   where
     handler var logrec = modifyIORef var (logrec :)
 
-ioAction :: Logger -> IO SystemTime
-ioAction lg = runM $ runBunyan lg dslAction
+ioAction :: Logger -> IO ()
+ioAction lg = runM $ runReader lg $ runBunyan dslAction
 
-dslAction :: Eff '[Bunyan, Reader Logger, IO] SystemTime
+dslAction :: Eff '[Bunyan, Reader Logger, IO] ()
 dslAction = do
   logInfo "info@root"
   logDebug "debug@root"
-  localLogger "child" (M.insert "x" "17") $ do
+  withNamedLogger "child" (M.insert "x" "17") $ do
     logInfo "info@child"
     logDebug "debug@child"
-    getLoggingTime

@@ -1,4 +1,3 @@
-{--# LANGUAGE AllowAmbiguousTypes #--}
 {- | Bunyan Logging / FreerSimple
 
 Note that WE ARE NOT USING the classy HasLogger lenses
@@ -8,10 +7,9 @@ Note that WE ARE NOT USING the classy HasLogger lenses
 module System.Log.Bunyan.Freer
   ( module System.Log.Bunyan
   , Bunyan(..)
-  , childLogger
-  , handleRecord
-  , getLoggingTime
-  , localLogger
+  , namedLogger
+  , withNamedLogger
+  , withLogger
   , logRecord
   , logInfo
   , logDebug
@@ -19,68 +17,78 @@ module System.Log.Bunyan.Freer
   , logError
   , logTrace
   , logDuration
+  , thenLogDuration
   , runBunyan
   ) where
 
-import Control.Monad (when)
 import Control.Monad.Freer
 import Control.Monad.Freer.Reader
 import qualified Data.Aeson as A
 import qualified Data.Text as T
-import System.Log.Bunyan
-  ( Logger(..)
-  , Priority(..)
-  , SystemTime
-  , decorateRecord
-  , duration
-  , intPriority
-  , modifyContext
-  , rootLogger
-  )
-import System.Log.Bunyan.LogText (LogText(..))
+import qualified Data.Time.Clock.System as SC
+import System.Log.Bunyan (Logger, Priority(..), modifyContext, rootLogger)
 import qualified System.Log.Bunyan as B
 
 -- | Bunyan primitives for effect monad
 data Bunyan x where
-  ChildLogger :: T.Text -> Logger -> Bunyan Logger
-  HandleRecord :: A.Object -> Logger -> Bunyan ()
-  LoggingTime :: Bunyan SystemTime
+  NamedLogger :: T.Text -> (A.Object -> A.Object) -> Logger -> Bunyan Logger
+  LogRecord
+    :: Priority -> (A.Object -> A.Object) -> T.Text -> Logger -> Bunyan ()
+  GetLoggingTime :: Bunyan SC.SystemTime
 
-childLogger ::
-     Members '[ Reader Logger, Bunyan] effs
-  => T.Text
-  -> Eff effs Logger
-childLogger n = ask >>= send . ChildLogger n
-
-handleRecord ::
-     Members '[ Reader Logger, Bunyan] effs => A.Object -> Eff effs ()
-handleRecord ctx = ask >>= send . HandleRecord ctx
-
-getLoggingTime :: Member Bunyan effs => Eff effs SystemTime
-getLoggingTime = send LoggingTime
-
-localLogger ::
+namedLogger ::
      Members '[ Reader Logger, Bunyan] effs
   => T.Text
   -> (A.Object -> A.Object)
-  -> Eff effs a
-  -> Eff effs a
-localLogger n f action = do
-  lg <- modifyContext f <$> childLogger n
-  local (const lg) action
+  -> Eff effs Logger
+namedLogger n f = ask >>= send . NamedLogger n f
 
 logRecord ::
-     (LogText a, Member (Reader Logger) effs, Member Bunyan effs)
+     Members '[ Reader Logger, Bunyan] effs
   => Priority
   -> (A.Object -> A.Object)
-  -> a
+  -> T.Text
   -> Eff effs ()
-logRecord pri fn msg = do
+logRecord pri ctx msg = ask >>= send . LogRecord pri ctx msg
+
+getLoggingTime :: Member Bunyan effs => Eff effs SC.SystemTime
+getLoggingTime = send GetLoggingTime
+
+thenLogDuration ::
+     Members '[ Reader Logger, Bunyan] effs
+  => Eff effs a
+  -> (a -> Eff effs Logger)
+  -> Eff effs a
+thenLogDuration action lgaction = do
+  start <- getLoggingTime
+  a <- action
+  end <- getLoggingTime
+  lg <- lgaction a
+  local (const lg) $ uncurry (logRecord INFO) (B.duration start end)
+  pure a
+
+logDuration ::
+     Members '[ Reader Logger, Bunyan] effs => Eff effs a -> Eff effs a
+logDuration action = do
   lg <- ask
-  let pri' = intPriority pri
-  when (pri' >= priority lg) $ do
-    tm <- getLoggingTime
-    handleRecord (decorateRecord pri fn msg tm lg)
+  thenLogDuration action (const $ pure lg)
+
+withNamedLogger ::
+     Members '[ Reader Logger, Bunyan] effs
+  => T.Text
+  -> (A.Object -> A.Object)
+  -> Eff effs a
+  -> Eff effs a
+withNamedLogger n ctx action = do
+  lg <- namedLogger n ctx
+  local (const lg) action
+
+withLogger ::
+     Members '[ Reader Logger, Bunyan] effs
+  => (A.Object -> A.Object)
+  -> Eff effs a
+  -> Eff effs a
+withLogger ctx = local (modifyContext ctx)
 
 logInfo :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
 logInfo = logRecord INFO id
@@ -97,20 +105,10 @@ logWarn = logRecord WARN id
 logTrace :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
 logTrace = logRecord TRACE id
 
-logDuration ::
-     Members '[ Bunyan, Reader Logger] effs => Eff effs a -> Eff effs a
-logDuration action = do
-  start <- getLoggingTime
-  a <- action
-  end <- getLoggingTime
-  uncurry (logRecord INFO) (duration start end)
-  pure a
-
-runBunyan :: Logger -> Eff '[ Bunyan, Reader Logger, IO] a -> Eff '[ IO] a
-runBunyan lg =
-  runReader lg .
+runBunyan :: Eff '[ Bunyan, Reader Logger, IO] a -> Eff '[ Reader Logger, IO] a
+runBunyan =
   interpretM
     (\case
-       ChildLogger n lg' -> B.childLogger n lg'
-       HandleRecord obj lg' -> B.handleRecord obj lg'
-       LoggingTime -> B.getLoggingTime)
+       NamedLogger n f lg -> B.namedLogger n f lg
+       LogRecord pri ctx msg lg -> B.logRecord pri ctx msg lg
+       GetLoggingTime -> SC.getSystemTime)

@@ -26,6 +26,7 @@ dependencies:
 - bunyan
 - freer-simple
 - text
+- time
 - unordered-containers
 
 library:

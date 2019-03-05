@@ -4,7 +4,7 @@ github:              "grmble/hs-bunyan"
 license:             MIT
 author:              "Juergen Gmeiner"
 maintainer:          "spamless.juergen@gmail.com"
-copyright:           "(c) 2018 Juergen Gmeiner"
+copyright:           "(c) 2018,2019 Juergen Gmeiner"
 
 extra-source-files:
 - README.md
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/grmble/hs-bunyan#readme>
+description:         Bunyan-style logging for Haskell
 
 # base 4.10 is stack lts 10 aka GHC 8.2.2
 dependencies:
@@ -25,6 +25,9 @@ dependencies:
 - bytestring
 - aeson
 - bunyan-pid
+- clock
+- formatting
+- hostname
 - network
 - picolens
 - scientific
