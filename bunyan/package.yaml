@@ -52,6 +52,14 @@ tests:
     - hspec
     - QuickCheck
 
+benchmarks:
+  bunyan-bench:
+    source-dirs: bench
+    main: Main.hs
+    ghc-options: -O2
+    dependencies:
+    - criterion
+    - bunyan
 
 #
 # ghc options and default extensions ... see

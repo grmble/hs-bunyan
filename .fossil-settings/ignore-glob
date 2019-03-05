@@ -11,6 +11,7 @@
 */.stack-work
 TAGS
 x.*
+*.log
 bunyan/bunyan.cabal
 bunyan-freer/bunyan-freer.cabal
 bunyan-rio/bunyan-rio.cabal
