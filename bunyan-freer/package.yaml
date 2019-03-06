@@ -48,6 +48,21 @@ tests:
     - hspec
     - QuickCheck
 
+benchmarks:
+  bunyan-freer-bench:
+    source-dirs: bench
+    main: Main.hs
+    ghc-options: -O2
+    dependencies:
+    - criterion
+    - bunyan
+    - bunyan-rio
+    - bunyan-freer
+    - freer-simple
+    - mtl
+    - picolens
+    - unliftio
+
 
 #
 # ghc options and default extensions ... see

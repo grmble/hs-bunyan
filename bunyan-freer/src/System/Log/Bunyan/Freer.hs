@@ -28,6 +28,7 @@ import qualified Data.Text as T
 import qualified Data.Time.Clock.System as SC
 import System.Log.Bunyan (Logger, Priority(..), modifyContext, rootLogger)
 import qualified System.Log.Bunyan as B
+import qualified System.Log.Bunyan.Types as B
 
 -- | Bunyan primitives for effect monad
 data Bunyan x where
@@ -88,7 +89,9 @@ withLogger ::
   => (A.Object -> A.Object)
   -> Eff effs a
   -> Eff effs a
-withLogger ctx = local (modifyContext ctx)
+withLogger ctx action = do
+  n <- asks B.name
+  withNamedLogger n ctx action
 
 logInfo :: Members '[ Bunyan, Reader Logger] effs => T.Text -> Eff effs ()
 logInfo = logRecord INFO id

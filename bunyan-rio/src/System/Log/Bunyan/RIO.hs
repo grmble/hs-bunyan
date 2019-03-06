@@ -36,6 +36,7 @@ import System.Log.Bunyan
   , rootLogger
   )
 import qualified System.Log.Bunyan as B
+import qualified System.Log.Bunyan.Types as B
 
 -- | Lens typeclass for getting a logger
 class HasLogger a where
@@ -83,4 +84,6 @@ withNamedLogger n f action = do
   local (over logger (const lg)) action
 
 withLogger :: Bunyan r m => (A.Object -> A.Object) -> m a -> m a
-withLogger f = local (over logger (modifyContext f))
+withLogger f action = do
+  n <- asks (B.name . view logger)
+  withNamedLogger n f action
