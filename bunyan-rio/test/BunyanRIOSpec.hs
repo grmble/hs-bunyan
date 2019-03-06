@@ -3,9 +3,9 @@ module BunyanRIOSpec where
 import Control.Lens.PicoLens
 import Control.Monad.Reader
 import qualified Data.HashMap.Strict as M
-import Test.Hspec
 import System.Log.Bunyan.RIO
 import System.Log.Bunyan.Types
+import Test.Hspec
 import UnliftIO.IORef
 import UnliftIO.STM
 
@@ -40,6 +40,22 @@ spec = do
       _ <- runReaderT ioAction rl
       records <- readIORef var
       length records `shouldBe` 3
+  describe "msg/context not evaluated when not logging" $ do
+    it "log message should be lazy" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      x <- runReaderT (logRecord DEBUG id undefined) rl
+      x `shouldBe` ()
+    it "context should be lazy" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      x <- runReaderT (logRecord DEBUG undefined "asdf") rl
+      x `shouldBe` ()
+  describe "msg/context evaluated when logging" $ do
+    it "log message should be strict" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      runReaderT (logRecord INFO id undefined) rl `shouldThrow` anyException
+    it "context should be strict" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      runReaderT (logRecord INFO undefined "asdf") rl `shouldThrow` anyException
   where
     handler var logrec = modifyIORef var (logrec :)
 

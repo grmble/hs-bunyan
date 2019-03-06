@@ -46,6 +46,22 @@ spec = do
       (ctx, msg) <- duration <$> SC.getSystemTime <*> SC.getSystemTime
       show msg `shouldContain` "completed in"
       ctx M.empty `shouldSatisfy` (isJust . M.lookup "duration")
+  describe "msg/context not evaluated when not logging" $ do
+    it "log message should be lazy" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      x <- logRecord DEBUG id undefined rl
+      x `shouldBe` ()
+    it "context should be lazy" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      x <-logRecord DEBUG undefined "asdf" rl
+      x `shouldBe` ()
+  describe "msg/context evaluated when logging" $ do
+    it "log message should be strict" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      logRecord INFO id undefined rl `shouldThrow` anyException
+    it "context should be strict" $ do
+      rl <- rootLogger "root" INFO consoleHandler
+      logRecord INFO undefined "asdf" rl `shouldThrow` anyException
   where
     handler var logrec = modifyIORef' var (logrec :)
 
