@@ -49,12 +49,11 @@ import Data.Time.Clock.System
 import Formatting ((%), int, sformat)
 import Network.HostName (getHostName)
 import System.IO
-  ( BufferMode(..)
-  , Handle
+  ( Handle
   , IOMode(..)
+  , hFlush
   , hPutStr
   , hPutStrLn
-  , hSetBuffering
   , stderr
   , stdout
   , withFile
@@ -72,8 +71,9 @@ import UnliftIO.STM (atomically, modifyTVar', newTVarIO, readTVarIO)
 consoleHandler :: A.Object -> IO ()
 consoleHandler obj
   -- putting a lazy bytestring does 2 writes, not good with multiple threads
-  -- also do not flush explictly, rather rely on buffer mode
- = BSC8.hPut stdout (LBSC8.toStrict $ A.encode obj <> "\n")
+ = do
+  BSC8.hPut stdout (LBSC8.toStrict $ A.encode obj <> "\n")
+  hFlush stdout
 
 -- | Handler that does not log anything
 noopHandler :: A.Object -> IO ()
@@ -100,14 +100,15 @@ withLogWriter q fp action = bracket (async $ logTo fp) cancel (const action)
       do hPutStr
            stderr
            ("NOTE: log messages are being written to " <> fp <> "\n")
-         withFile fp AppendMode $ \handle -> do
-           hSetBuffering handle LineBuffering
-           go handle
+         withFile fp AppendMode $ \handle
+           -- setting buffer mode seems unreliable
+          -> go handle
      `catchIO` handleError
     go :: Handle -> IO ()
     go handle = do
       x <- takeMVar q
       LBSC8.hPut handle (A.encode x <> "\n")
+      hFlush handle
       go handle
 
 -- | Create a root logger object.
@@ -214,7 +215,8 @@ logDuration :: MonadIO m => (Logger -> m a) -> Logger -> m a
 logDuration = go
   where
     go action = logDuration' (handler action)
-    handler :: MonadIO m => (Logger -> m a) -> (A.Object -> m ()) -> Logger -> m a
+    handler ::
+         MonadIO m => (Logger -> m a) -> (A.Object -> m ()) -> Logger -> m a
     handler action cb lg = do
       a <- action lg
       cb M.empty
