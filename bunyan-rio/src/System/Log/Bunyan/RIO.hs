@@ -15,7 +15,7 @@ module System.Log.Bunyan.RIO
   , logWarn
   , logTrace
   , logDuration
-  , thenLogDuration
+  , logDuration'
   , logRecord
   , namedLogger
   , withNamedLogger
@@ -68,12 +68,8 @@ logRecord pri fn msg = asks (view logger) >>= B.logRecord pri fn msg
 logDuration :: Bunyan r m => m a -> m a
 logDuration action = asks (view logger) >>= B.logDuration (const action)
 
-thenLogDuration :: Bunyan r m => m a -> (a -> m Logger) -> m a
-thenLogDuration action lgaction = do
-  lg <- asks (view logger)
-  -- we know that it's the same logger
-  (const action `B.thenLogDuration` (\a _ -> lgaction a)) lg
-
+logDuration' :: Bunyan r m => ((A.Object -> m ()) -> m a) -> m a
+logDuration' action = asks (view logger) >>= B.logDuration' (\cb _ -> action cb)
 
 namedLogger :: Bunyan r m => T.Text -> (A.Object -> A.Object) -> m Logger
 namedLogger n f = asks (view logger) >>= B.namedLogger n f

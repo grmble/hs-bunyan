@@ -22,7 +22,7 @@ module System.Log.Bunyan
   , logError
   , logTrace
   , logDuration
-  , thenLogDuration
+  , logDuration'
   , duration
   , consoleHandler
   , noopHandler
@@ -211,24 +211,34 @@ logTrace = logRecord TRACE id
 
 -- | Log the duration of the action.
 logDuration :: MonadIO m => (Logger -> m a) -> Logger -> m a
-logDuration action = action `thenLogDuration` const pure
+logDuration = go
+  where
+    go action = logDuration' (handler action)
+    handler :: MonadIO m => (Logger -> m a) -> (A.Object -> m ()) -> Logger -> m a
+    handler action cb lg = do
+      a <- action lg
+      cb M.empty
+      pure a
 
 -- | Log the duration of the action
 --
--- This will decorate the logger with the result of an additional function.
--- E.g. when logging a Warp request, you need the response that is produced
--- by the action to log a response status.
---
--- If an exception is thrown, nothing is logged.
-thenLogDuration ::
-     MonadIO m => (Logger -> m a) -> (a -> Logger -> m Logger) -> Logger -> m a
-thenLogDuration action lgaction lg = do
+-- This one gives an addional callback to the monadic action.
+-- This allows the monad to pass additional context arguments,
+-- e.g. for decorating the logger with the status from the
+-- response object.
+logDuration' ::
+     MonadIO m => ((A.Object -> m ()) -> Logger -> m a) -> Logger -> m a
+logDuration' action lg = do
   start <- liftIO getSystemTime
-  a <- action lg
-  end <- liftIO getSystemTime
-  lg' <- lgaction a lg
-  uncurry (logRecord INFO) (duration start end) lg'
-  pure a
+  action (handler start) lg
+  where
+    handler :: MonadIO m => SystemTime -> A.Object -> m ()
+    handler start ctx = do
+      end <- liftIO getSystemTime
+      uncurry
+        (logRecord INFO)
+        (duration start end)
+        (modifyContext (M.union ctx) lg)
 
 -- | Helper to compute a duration.
 --

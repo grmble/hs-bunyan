@@ -17,7 +17,6 @@ module System.Log.Bunyan.Freer
   , logError
   , logTrace
   , logDuration
-  , thenLogDuration
   , runBunyan
   ) where
 
@@ -55,24 +54,14 @@ logRecord pri ctx msg = ask >>= send . LogRecord pri ctx msg
 getLoggingTime :: Member Bunyan effs => Eff effs SC.SystemTime
 getLoggingTime = send GetLoggingTime
 
-thenLogDuration ::
-     Members '[ Reader Logger, Bunyan] effs
-  => Eff effs a
-  -> (a -> Eff effs Logger)
-  -> Eff effs a
-thenLogDuration action lgaction = do
-  start <- getLoggingTime
-  a <- action
-  end <- getLoggingTime
-  lg <- lgaction a
-  local (const lg) $ uncurry (logRecord INFO) (B.duration start end)
-  pure a
-
 logDuration ::
      Members '[ Reader Logger, Bunyan] effs => Eff effs a -> Eff effs a
 logDuration action = do
-  lg <- ask
-  thenLogDuration action (const $ pure lg)
+  start <- getLoggingTime
+  a <- action
+  end <- getLoggingTime
+  uncurry (logRecord INFO) (B.duration start end)
+  pure a
 
 withNamedLogger ::
      Members '[ Reader Logger, Bunyan] effs
