@@ -46,7 +46,7 @@ import Data.Time.Clock.System
   , systemSeconds
   , systemToUTCTime
   )
-import Formatting ((%), int, sformat)
+import Formatting ((%), int, sformat, stext)
 import Network.HostName (getHostName)
 import System.IO
   ( Handle
@@ -211,10 +211,11 @@ logTrace :: MonadIO m => T.Text -> Logger -> m ()
 logTrace = logRecord TRACE id
 
 -- | Log the duration of the action.
-logDuration :: MonadIO m => (Logger -> m a) -> Logger -> m a
-logDuration = go
+logDuration ::
+     MonadIO m => Priority -> T.Text -> (Logger -> m a) -> Logger -> m a
+logDuration pri msg = go
   where
-    go action = logDuration' (handler action)
+    go action = logDuration' pri msg (handler action)
     handler ::
          MonadIO m => (Logger -> m a) -> (A.Object -> m ()) -> Logger -> m a
     handler action cb lg = do
@@ -229,8 +230,13 @@ logDuration = go
 -- e.g. for decorating the logger with the status from the
 -- response object.
 logDuration' ::
-     MonadIO m => ((A.Object -> m ()) -> Logger -> m a) -> Logger -> m a
-logDuration' action lg = do
+     MonadIO m
+  => Priority
+  -> T.Text
+  -> ((A.Object -> m ()) -> Logger -> m a)
+  -> Logger
+  -> m a
+logDuration' pri msg action lg = do
   start <- liftIO getSystemTime
   action (handler start) lg
   where
@@ -238,8 +244,8 @@ logDuration' action lg = do
     handler start ctx = do
       end <- liftIO getSystemTime
       uncurry
-        (logRecord INFO)
-        (duration start end)
+        (logRecord pri)
+        (duration msg start end)
         (modifyContext (M.union ctx) lg)
 
 -- | Helper to compute a duration.
@@ -249,13 +255,17 @@ logDuration' action lg = do
 --
 --    uncurry
 --      (logRecord DEBUG) \
---      (duration <$> getSystemTime <*> getSystemTime)
-duration :: SystemTime -> SystemTime -> (A.Object -> A.Object, T.Text)
-duration start end = do
+--      (duration "foo" <$> getSystemTime <*> getSystemTime)
+duration :: T.Text -> SystemTime -> SystemTime -> (A.Object -> A.Object, T.Text)
+duration msg start end = do
   let dur = double end - double start
   let ctx = M.insert "duration" (A.Number $ Scientific.fromFloatDigits dur)
-  let msg = sformat ("completed in " % int % "ms") ((round $ 1000 * dur) :: Int)
-  (ctx, msg)
+  let msg' =
+        sformat
+          (stext % " completed in " % int % "ms")
+          msg
+          ((round $ 1000 * dur) :: Int)
+  (ctx, msg')
   where
     double :: SystemTime -> Double
     double sc =

@@ -43,7 +43,7 @@ spec = do
       length records `shouldBe` 3
   describe "check duration helper" $
     it "should compute suitable headers" $ do
-      (ctx, msg) <- duration <$> SC.getSystemTime <*> SC.getSystemTime
+      (ctx, msg) <- duration "foo" <$> SC.getSystemTime <*> SC.getSystemTime
       show msg `shouldContain` "completed in"
       ctx M.empty `shouldSatisfy` (isJust . M.lookup "duration")
   describe "msg/context not evaluated when not logging" $ do

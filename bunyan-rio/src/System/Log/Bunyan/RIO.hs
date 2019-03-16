@@ -65,11 +65,14 @@ logTrace = logRecord TRACE id
 logRecord :: Bunyan r m => Priority -> (A.Object -> A.Object) -> T.Text -> m ()
 logRecord pri fn msg = asks (view logger) >>= B.logRecord pri fn msg
 
-logDuration :: Bunyan r m => m a -> m a
-logDuration action = asks (view logger) >>= B.logDuration (const action)
+logDuration :: Bunyan r m => Priority -> T.Text -> m a -> m a
+logDuration pri msg action =
+  asks (view logger) >>= B.logDuration pri msg (const action)
 
-logDuration' :: Bunyan r m => ((A.Object -> m ()) -> m a) -> m a
-logDuration' action = asks (view logger) >>= B.logDuration' (\cb _ -> action cb)
+logDuration' ::
+     Bunyan r m => Priority -> T.Text -> ((A.Object -> m ()) -> m a) -> m a
+logDuration' pri msg action =
+  asks (view logger) >>= B.logDuration' pri msg (\cb _ -> action cb)
 
 namedLogger :: Bunyan r m => T.Text -> (A.Object -> A.Object) -> m Logger
 namedLogger n f = asks (view logger) >>= B.namedLogger n f

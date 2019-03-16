@@ -55,12 +55,16 @@ getLoggingTime :: Member Bunyan effs => Eff effs SC.SystemTime
 getLoggingTime = send GetLoggingTime
 
 logDuration ::
-     Members '[ Reader Logger, Bunyan] effs => Eff effs a -> Eff effs a
-logDuration action = do
+     Members '[ Reader Logger, Bunyan] effs
+  => Priority
+  -> T.Text
+  -> Eff effs a
+  -> Eff effs a
+logDuration pri msg action = do
   start <- getLoggingTime
   a <- action
   end <- getLoggingTime
-  uncurry (logRecord INFO) (B.duration start end)
+  uncurry (logRecord pri) (B.duration msg start end)
   pure a
 
 withNamedLogger ::
