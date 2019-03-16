@@ -18,6 +18,8 @@ leads to an error, then latin1 is used
 class LogText a where
   -- | Convert to Text
   toText :: a -> T.Text
+  -- | Convert to ByteString
+  toByteString :: a -> B.ByteString
   -- | Convert to a builder
   toBuilder :: a -> TB.Builder
 
@@ -29,18 +31,22 @@ infixr 6 <>:
 
 instance LogText T.Text where
   toText = id
+  toByteString = T.encodeUtf8
   toBuilder = TB.fromText
 
 instance LogText LT.Text where
   toText = LT.toStrict
+  toByteString = toByteString . LT.toStrict
   toBuilder = TB.fromLazyText
 
 instance LogText TB.Builder where
   toText = LT.toStrict . TB.toLazyText
+  toByteString = T.encodeUtf8 . toText
   toBuilder = id
 
 instance LogText String where
   toText = T.pack
+  toByteString = toByteString . TB.fromString
   toBuilder = TB.fromString
 
 instance LogText B.ByteString where
@@ -52,10 +58,12 @@ instance LogText B.ByteString where
         pure x
       fallback :: SomeException -> IO T.Text
       fallback _ = pure $ T.decodeLatin1 bs
+  toByteString = id
   toBuilder = TB.fromText . toText
 
 -- lazy version uses the strict one
 -- no lazy exceptions from decoding lazy bytestring
 instance LogText LB.ByteString where
-  toText bs = toText $ LB.toStrict bs
-  toBuilder bs = toBuilder $ LB.toStrict bs
+  toText = toText . LB.toStrict
+  toByteString = LB.toStrict
+  toBuilder = toBuilder . LB.toStrict
